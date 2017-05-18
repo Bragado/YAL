@@ -1,7 +1,11 @@
 
 import Estruturas.*;
 import AnalisadorLexical.*;
+import AnalisadorSintático.Parser;
+
 import java.io.StringReader;
+import java.util.ArrayList;
+
 import javax.swing.JTextField;
 
 
@@ -14,23 +18,31 @@ public class Interface  {
     public static void main(String[] args){
         
 	Interface iinterface = new Interface();
+	
 	try {
-		iinterface.executar("module program1 { data=[100]; mx; mn; function det(d[]) { i=0; M=d.size-1; while(i<M) { a=d[i]; i=i+1; b=d[i]; mx= library1.max(a,b); mn= library1.min(a,b); } } function main() { det(data); io.println(\"max: \",mx); io.println(\"min: \",mn); }}");
-	}catch (Exception e) {
-		System.out.println(e.getMessage());
-	}
+		
+		
+		ArrayList<Token> tokens = iinterface.executar("module program1 { data=[100]; mx; mn; function det(d[]) { i=0; M=d.size-1; while(i<M) { a=d[i]; i=i+1; b=d[i]; mx= library1.max(a,b); mn= library1.min(a,b); } } function main() { det(data); io.println(\"max: \",mx); io.println(\"min: \",mn); }}");
+		iinterface.parse(tokens);
+	
+		}catch (Exception e) {
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		}
     }
+    
+    public  void parse(ArrayList<Token> tokens) {
+    	Parser parse = new Parser(tokens);
+    	parse.parse();
+    }
+    
    
     
-    public void executar(String expr) throws Exception{
+    public ArrayList<Token> executar(String expr) throws Exception{
         
-       
-       
-     
-      
-     
+           
        Lexer lexer = new Lexer(new StringReader(expr));
-       
+       ArrayList<Token> tokens = new ArrayList<Token>();
        String resultado="";
        
        while(true){
@@ -38,10 +50,10 @@ public class Interface  {
            if(token == null){
                
                System.out.println(resultado);
-                return;
+                return tokens;
            }
                 
-                
+              tokens.add(token);  
        
                switch(token.getTokenID()){
                 

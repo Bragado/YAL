@@ -1,6 +1,6 @@
 package Estruturas;
 
-public class Token  {
+public class Token  extends Symbol {
 	
 	private TokenID tokenID;
 	private String data = "";
@@ -28,6 +28,12 @@ public class Token  {
 
 	public int line() {
 		return this.line;
+	}
+
+	@Override
+	public TokenID getID() {
+		// TODO Auto-generated method stub
+		return this.tokenID;
 	}
 
 
