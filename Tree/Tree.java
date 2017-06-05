@@ -48,7 +48,7 @@ public class Tree
 
                                     children201001.add(param1);
                                     children201001.add(param2);
-                                    child201001.setChildren(children201001);
+                                    child201002.setChildren(children201001);
                                 }
                                 Node<String> child201003 = new Node<>("INTEGER");
 
