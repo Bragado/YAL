@@ -216,6 +216,7 @@ public class Converter
                     break;
                     
                 case "WHILE":
+                    func.append(assignHandler(no, sp, spNo));
                     break;
                     
                 case "IF":
@@ -225,7 +226,7 @@ public class Converter
                     break;
                     
                 case "CALL":
-                    func.append(callHandler(no, sp));
+                    func.append(callHandler(no, sp, spNo));
                     break;
                     
                 default:
@@ -254,6 +255,46 @@ public class Converter
         func.append("\n.end method");
         
         return func;
+    }
+
+    private StringBuilder whileHandler(Node<String> nd, Map<String, Integer> sp, int spNo)
+    {
+        Node<String> lhsN = nd.getChildAt(0);
+        String lhsV = lhsN.getValue();
+        
+        Node<String> rhsN = nd.getChildAt(1);
+        String rhsV = rhsN.getValue();
+
+        StringBuilder jvm = new StringBuilder();
+        
+        switch (lhsV) {
+            case ">":
+                jvm.append(RelationalsHandler(">", lhsN.getChildAt(0), lhsN.getChildAt(1), sp));
+                break;
+            case "<":
+                jvm.append(RelationalsHandler("<", lhsN.getChildAt(0), lhsN.getChildAt(1), sp));
+                break;
+            case ">=":
+                jvm.append(RelationalsHandler(">=", lhsN.getChildAt(0), lhsN.getChildAt(1), sp));
+                break;
+            case "<=":
+                jvm.append(RelationalsHandler("<=", lhsN.getChildAt(0), lhsN.getChildAt(1), sp));
+                break;
+            case "!=":
+                jvm.append(RelationalsHandler("!=", lhsN.getChildAt(0), lhsN.getChildAt(1), sp));
+                break;
+            case "==":
+                jvm.append(RelationalsHandler("==", lhsN.getChildAt(0), lhsN.getChildAt(1), sp));
+                break;
+            default:
+                callHandler(lhsN, sp);
+                break;
+        }
+
+        assignHandler(rhsV, sp, spNo));
+
+        jvm.return;
+
     }
     
     private StringBuilder assignHandler(Node<String> nd, Map<String, Integer> sp, int spNo)
@@ -525,6 +566,46 @@ public class Converter
         
         return jvm;
     }
+ 
+    private StringBuilder RelationalsHandler(String operation, Node<String> oper1, Node<String> oper2, Map<String, Integer> sp){
+
+        StringBuilder jvm = new StringBuilder();
+    
+        jvm.append("\niconst_");
+        jvm.append(oper1.getValue());
+        jvm.append("\niconst_");
+        jvm.append(oper2.getValue());
+
+        switch(operation)
+            {
+                case ">":
+                    jvm.append("\ni>");
+                    break;
+                    
+                case "<":
+                    jvm.append("\ni<");
+                    break;
+                    
+                case ">=":
+                    jvm.append("\ni>=");
+                    break;
+                    
+                case "<=":
+                    jvm.append("\ni<=");
+                    break;
+                case "!=":
+                    jvm.append("\ni!=");
+                    break;
+                case "==":
+                    jvm.append("\ni==");
+                    break;
+            }
+            
+            return jvm;
+     }
+    
+
+
 
     private StringBuilder operationsHandler(String operation, Node<String> oper1, Node<String> oper2, Map<String, Integer> sp)
     {
