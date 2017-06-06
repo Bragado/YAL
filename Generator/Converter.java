@@ -15,14 +15,16 @@ public class Converter
 {
     File jvm;
     StringBuilder lines;
-    Map<String, LinkedList<String>> funcParam;
     boolean isDecsNull = true;
+    Map<String, Integer> sp;
+    int spNo;
+    private int loopNo;
     
-    public Converter()
+    public Converter(String fileName)
     {
-        jvm = new File("JVM.j");
+        jvm = new File(fileName);
         lines = new StringBuilder();
-        funcParam = new HashMap<String, LinkedList<String>>();
+        loopNo = 0;
     }
     
     public void Convert(Node<String> node)
@@ -126,9 +128,8 @@ public class Converter
     private StringBuilder functionsHandler(Node<String> nd)
     {
         StringBuilder func = new StringBuilder();
-        LinkedList<String> parameters = new LinkedList<>();
-        Map<String, Integer> sp = new HashMap<String, Integer>();
-        int spNo = 0;
+        sp = new HashMap<String, Integer>();
+        spNo = 0;
         
         
         if(nd.getChildAt(0).getValue().equals("main"))
@@ -138,7 +139,6 @@ public class Converter
         else if(nd.getChildAt(0).getValue().equals("ASSIGN"))
         {
             func.append("\n\n.method public static "+nd.getChildAt(0).getChildAt(1).getValue()+"(");
-            funcParam.put(nd.getChildAt(0).getChildAt(1).getValue(), new LinkedList<>());
             
             if(!nd.getChildAt(1).isLeaf())
             {
@@ -147,29 +147,30 @@ public class Converter
                     if(n.getValue().equals("ARRAY"))
                     {
                         func.append("[I");
-                        parameters.add(n.getChildAt(0).getValue());
-                        funcParam.replace(nd.getChildAt(0).getChildAt(1).getValue(), parameters);
+                        sp.put(n.getChildAt(0).getValue(), spNo++);
+                    }
+                    else if(n.getValue().equals("LDC"))
+                    {
+                        func.append("[Ljava/lang/String;");
                         sp.put(n.getChildAt(0).getValue(), spNo++);
                     }
                     else
                     {
                         func.append("I");
-                        parameters.add(n.getValue());
-                        funcParam.replace(nd.getChildAt(0).getChildAt(1).getValue(), parameters);
                         sp.put(n.getValue(), spNo++);
                     }
                 }
             }
             
-            if(nd.getChildAt(0).getChildAt(0).getValue().equals("ARRAY"))
+            Node<String> retType = nd.getChildAt(0).getChildAt(0);
+            if(retType.getValue().equals("ARRAY"))
                 func.append(")[I");
             else
-                func.append(")I");
-            
-            sp.put(nd.getChildAt(0).getChildAt(0).getValue(), spNo++);
+                func.append(")I");   
         }
         else
         {
+            func.append("\n.method public static ");
             func.append(nd.getChildAt(0).getValue()+"(");
             if(!nd.getChildAt(1).isLeaf())
             {
@@ -178,15 +179,16 @@ public class Converter
                     if(n.getValue().equals("ARRAY"))
                     {
                         func.append("[I");
-                        parameters.add(n.getChildAt(0).getValue());
-                        funcParam.replace(nd.getChildAt(0).getChildAt(1).getValue(), parameters);
+                        sp.put(n.getChildAt(0).getValue(), spNo++);
+                    }
+                    else if(n.getValue().equals("LDC"))
+                    {
+                        func.append("[Ljava/lang/String;");
                         sp.put(n.getChildAt(0).getValue(), spNo++);
                     }
                     else
                     {
                         func.append("I");
-                        parameters.add(n.getValue());
-                        funcParam.replace(nd.getChildAt(0).getChildAt(1).getValue(), parameters);
                         sp.put(n.getValue(), spNo++);
                     }
                 }
@@ -196,45 +198,9 @@ public class Converter
         func.append("\n.limit locals 10");
         func.append("\n.limit stack 10");
         
+        func.append(blockHandler(nd));
         
-        /*--------------- SPLIT HERE ---------------------*/
-        
-        
-        int i;
-        if(nd.getChildAt(0).getValue().equals("main"))
-            i = 1;
-        else
-            i = 2;
-        
-        /*Handle the BLOCK section, calling each node of the block*/
-        for(Node<String> no : nd.getChildAt(i).getChildren())
-        {
-            switch(no.getValue())
-            {
-                case "ASSIGN":
-                    func.append(assignHandler(no, sp, spNo));
-                    break;
-                    
-                case "WHILE":
-                    func.append(assignHandler(no, sp, spNo));
-                    break;
-                    
-                case "IF":
-                    break;
-                    
-                case "FOR":
-                    break;
-                    
-                case "CALL":
-                    func.append(callHandler(no, sp, spNo));
-                    break;
-                    
-                default:
-                    break;
-            }
-        }
-        
-        if(nd.getChildAt(0).getChildCount() == 2 )
+        if(nd.getChildAt(0).getValue().equals("ASSIGN"))
         {
             if(nd.getChildAt(0).getChildAt(0).getValue().equals("ARRAY"))
             {
@@ -256,48 +222,53 @@ public class Converter
         
         return func;
     }
-
-    private StringBuilder whileHandler(Node<String> nd, Map<String, Integer> sp, int spNo)
+    
+    private StringBuilder blockHandler(Node<String> nd)
     {
-        Node<String> lhsN = nd.getChildAt(0);
-        String lhsV = lhsN.getValue();
-        
-        Node<String> rhsN = nd.getChildAt(1);
-        String rhsV = rhsN.getValue();
-
         StringBuilder jvm = new StringBuilder();
+         
+        int i;
+        if(nd.getChildAt(0).getValue().equals("main")
+            || nd.getValue().equals("WHILE")
+            ||(nd.getValue().equals("IF") && nd.getChildCount() == 2))
+            i = 1;
+        else if(nd.getValue().equals("FOR"))
+            i = 3;
+        else if(nd.getValue().equals("ELSE"))
+            i = 0;
+        else
+            i = 2;
         
-        switch (lhsV) {
-            case "g":
-                jvm.append(RelationalsHandler("g", lhsN.getChildAt(0), lhsN.getChildAt(1), sp));
-                break;
-            case "l":
-                jvm.append(RelationalsHandler("<", lhsN.getChildAt(0), lhsN.getChildAt(1), sp));
-                break;
-            case "geq":
-                jvm.append(RelationalsHandler(">=", lhsN.getChildAt(0), lhsN.getChildAt(1), sp));
-                break;
-            case "leq":
-                jvm.append(RelationalsHandler("<=", lhsN.getChildAt(0), lhsN.getChildAt(1), sp));
-                break;
-            case "noteq":
-                jvm.append(RelationalsHandler("!=", lhsN.getChildAt(0), lhsN.getChildAt(1), sp));
-                break;
-            case "eq":
-                jvm.append(RelationalsHandler("==", lhsN.getChildAt(0), lhsN.getChildAt(1), sp));
-                break;
-            default:
-                callHandler(lhsN, sp);
-                break;
+        for(Node<String> no : nd.getChildAt(i).getChildren())
+        {
+            switch(no.getValue())
+            {
+                case "ASSIGN":
+                    jvm.append(assignHandler(no));
+                    break;
+                    
+                case "WHILE":
+                    jvm.append(whileHandler(no));
+                    break;
+                    
+                case "IF":
+                    jvm.append(ifHandler(no));
+                    break;
+                    
+                case "FOR":
+                    jvm.append(forHandler(no));
+                    break;
+                    
+                case "CALL":
+                    jvm.append(callHandler(no));
+                    break;
+            }
         }
-
-        assignHandler(rhsV, sp, spNo));
-
-        jvm.return;
-
+        
+        return jvm;
     }
     
-    private StringBuilder assignHandler(Node<String> nd, Map<String, Integer> sp, int spNo)
+    private StringBuilder assignHandler(Node<String> nd)
     {
         Node<String> lhsN = nd.getChildAt(0);
         String lhsV = lhsN.getValue();
@@ -309,33 +280,47 @@ public class Converter
         
         if(lhsV.equals("ARRAY") && lhsN.getChildCount() == 1)
         {
-            if(rhsV.equals("ARRAY") && rhsN.getChildCount() == 1)
+            if(rhsV.equals("SIZE"))
+            {
+                String size = rhsN.getChildAt(0).getValue();
+                if(size.matches("\\d+"))
+                {
+                    jvm.append("\nbipush ");
+                    jvm.append(size);
+                }
+                else
+                {
+                    jvm.append("\niload_");
+                    jvm.append(sp.get(size));
+                }
+            }
+            else if(rhsV.equals("ARRAY") && rhsN.getChildCount() == 1)
             {
                 jvm.append("\naload_");
                 jvm.append(sp.get(rhsN.getChildAt(0).getValue()));
             }
             else if(rhsV.equals("ARRAY") && rhsN.getChildCount() > 1)
             {
-                
+                jvm.append("\naload_");
+                jvm.append(sp.get(rhsN.getChildAt(0).getValue()));
+                jvm.append("\niload_");
+                jvm.append(sp.get(rhsN.getChildAt(1).getValue()));
+                jvm.append("\niaload");
             }
-            else if(rhsV.matches("\\d+"))
+            else if(rhsV.equals("CALL"))
             {
-            
+                jvm.append(callHandler(rhsN));
             }
             else
             {
                 jvm.append("\niload_");
                 jvm.append(sp.get(rhsV));
             }
-            
-            jvm.append("\nnewarray int");
-            jvm.append("\nastore_");
-            jvm.append(sp.get(lhsV));
         }
         else if(lhsV.equals("ARRAY") && lhsN.getChildCount() > 1)
         {
             String Lindex = lhsN.getChildAt(1).getValue();
-            String Rindex = rhsN.getChildAt(1).getValue();
+            
             
             jvm.append("\naload_");
             jvm.append(sp.get(lhsN.getChildAt(0).getValue()));
@@ -344,20 +329,24 @@ public class Converter
                 jvm.append("\niload_");
                 jvm.append(sp.get(Lindex));
             }
+            else if(Lindex.equals("0"))
+            {
+                jvm.append("\niconst_0");
+            }
             else
             {
-                jvm.append("\niconst_");
+                jvm.append("\nbipush ");
                 jvm.append(Lindex);
             }
-            
             
             if(rhsV.matches("\\d+"))
             {
                 jvm.append("\niconst_");
                 jvm.append(rhsV);
             }
-            else
+            else if(rhsN.getChildCount() > 1)
             {
+                String Rindex = rhsN.getChildAt(1).getValue();
                 jvm.append("\naload_");
                 jvm.append(sp.get(rhsN.getChildAt(0).getValue()));
                 if(sp.containsKey(Rindex))
@@ -365,9 +354,13 @@ public class Converter
                     jvm.append("\niload_");
                     jvm.append(sp.get(Rindex));
                 }
+                else if(Rindex.equals("0"))
+                {
+                    jvm.append("\niconst_0");
+                }
                 else
                 {
-                    jvm.append("\niconst_");
+                    jvm.append("\nbipush_");
                     jvm.append(Rindex);
                 }
                 jvm.append("\niaload");
@@ -380,52 +373,51 @@ public class Converter
             switch(rhsV)
             {
                 case "ARRAY":
-                    break;
-                    
-                case "CALL":
-                    if(rhsN.getChildAt(1).getValue().equals("size"))
+                    jvm.append("\naload_");
+                    if(rhsN.getChildCount() == 1)
                     {
-                        jvm.append("\naload_");
                         jvm.append(sp.get(rhsN.getChildAt(0).getValue()));
-                        jvm.append("\narrayLength");
                     }
                     else
                     {
-                        for(Node<String> param : rhsN.getChildAt(2).getChildren())
+                        jvm.append(sp.get(rhsN.getChildAt(0).getValue()));
+                        if(rhsN.getChildAt(1).getValue().matches("\\d+"))
                         {
-                            if(param.getValue().matches("\\d+"))
-                            {
-                                jvm.append("\niconst_");
-                                jvm.append(param.getValue());
-                            }
-                            else if(param.getValue().equals("ARRAY"))
-                            {
-                                  
-                            }
+                            if(Integer.parseInt(rhsN.getChildAt(1).getValue()) > 5)
+                                jvm.append("\nbipush ");
                             else
-                            {
-                                
-                            }
+                                jvm.append("\niconst_");
+                            
+                            jvm.append(rhsN.getChildAt(1).getValue());
+                        }
+                        else
+                        {
+                            jvm.append("\niload_");
+                            jvm.append(sp.get(rhsN.getChildAt(1).getValue()));
                         }
                         
-                        jvm.append(callHandler(rhsN, sp));
+                        jvm.append("\niaload");
                     }
                     break;
                     
+                case "CALL":
+                    jvm.append(callHandler(rhsN));
+                    break;
+                    
                 case "ADD":
-                    jvm.append(operationsHandler("ADD", rhsN.getChildAt(0), rhsN.getChildAt(1), sp));
+                    jvm.append(operationsHandler("ADD", rhsN.getChildAt(0), rhsN.getChildAt(1)));
                     break;
                     
                 case "SUB":
-                    jvm.append(operationsHandler("SUB", rhsN.getChildAt(0), rhsN.getChildAt(1), sp));
+                    jvm.append(operationsHandler("SUB", rhsN.getChildAt(0), rhsN.getChildAt(1)));
                     break;
                     
                 case "MUL":
-                    jvm.append(operationsHandler("MUL", rhsN.getChildAt(0), rhsN.getChildAt(1), sp));
+                    jvm.append(operationsHandler("MUL", rhsN.getChildAt(0), rhsN.getChildAt(1)));
                     break;
                     
                 case "DIV":
-                    jvm.append(operationsHandler("DIV", rhsN.getChildAt(0), rhsN.getChildAt(1), sp));
+                    jvm.append(operationsHandler("DIV", rhsN.getChildAt(0), rhsN.getChildAt(1)));
                     break;
                     
                 default:
@@ -433,27 +425,11 @@ public class Converter
                     {
                         jvm.append("\niconst_");
                         jvm.append(rhsV);
-                        jvm.append("\nistore_");
-                        if(sp.containsKey(lhsV))
-                            jvm.append(sp.get(lhsV));
-                        else
-                        {
-                            sp.put(lhsV, spNo++);
-                            jvm.append(sp.get(lhsV));
-                        }
                     }
                     else //If rhs is a variable
                     {
                         jvm.append("\niload_");
                         jvm.append(sp.get(rhsV));
-                        jvm.append("\nistore_");
-                        if(sp.containsKey(lhsV))
-                            jvm.append(sp.get(lhsV));
-                        else
-                        {
-                            sp.put(lhsV, spNo++);
-                            jvm.append(sp.get(lhsV));
-                        }
                     }
                     break;
             }
@@ -461,20 +437,52 @@ public class Converter
         
         if(lhsV.equals("ARRAY"))
         {
-            jvm.append("\nastore_");
-            if(sp.containsKey(lhsV))
-                jvm.append(sp.get(lhsV));
-            else
+            if(lhsN.getChildCount() == 1)
             {
-                sp.put(lhsV, spNo++);
-                jvm.append(sp.get(lhsV));
+                
+                if(sp.containsKey(lhsN.getChildAt(0).getValue()))
+                {
+                    jvm.append("\nastore_");
+                    jvm.append(sp.get(lhsN.getChildAt(0).getValue()));
+                }
+                else if(rhsV.equals("CALL") && rhsN.getChildAt(3).getValue().equals("ARRAY"))
+                {
+                    jvm.append("\nastore_");
+                    if(sp.containsKey(lhsN.getChildAt(0).getValue()))
+                        jvm.append(sp.get(lhsN.getChildAt(0).getValue()));
+                    else
+                    {
+                        sp.put(lhsN.getChildAt(0).getValue(), spNo++);
+                        jvm.append(sp.get(lhsN.getChildAt(0).getValue()));
+                    }
+                }
+                else if(rhsV.equals("CALL") && rhsN.getChildAt(3).getValue().equals("INTEGER"))
+                {
+                    jvm.append("\nistore_");
+                    if(sp.containsKey(lhsN.getChildAt(0).getValue()))
+                        jvm.append(sp.get(lhsN.getChildAt(0).getValue()));
+                    else
+                    {
+                        sp.put(lhsN.getChildAt(0).getValue(), spNo++);
+                        jvm.append(sp.get(lhsN.getChildAt(0).getValue()));
+                    }
+                }
+                else
+                {
+                    jvm.append("\nnewarray int");
+                    jvm.append("\nastore_");
+                    sp.put(lhsN.getChildAt(0).getValue(), spNo++);
+                    jvm.append(sp.get(lhsN.getChildAt(0).getValue()));
+                }
             }
         }
         else
         {
             jvm.append("\nistore_");
             if(sp.containsKey(lhsV))
+            {
                 jvm.append(sp.get(lhsV));
+            }
             else
             {
                 sp.put(lhsV, spNo++);
@@ -485,7 +493,7 @@ public class Converter
         return jvm;
     }
 
-    private StringBuilder callHandler(Node<String> nd, Map<String, Integer> sp)
+    private StringBuilder callHandler(Node<String> nd)
     {
         /*Stores the module node and value or the variable node and value if the function name is "size"*/
         Node<String> modNode = nd.getChildAt(0);
@@ -502,18 +510,37 @@ public class Converter
         /*JVM code builder*/
         StringBuilder jvm = new StringBuilder();
         
+        if(funcValue.equals("size"))
+        {
+            jvm.append("\naload_");
+            jvm.append(sp.get(modValue));
+            jvm.append("\narrayLength");
+            return jvm;
+        }
+        
         /*Load parameters if any*/
         if(!nd.getChildAt(2).isLeaf())
         {
             for(Node<String> n : nd.getChildAt(2).getChildren())
             {
                 if(n.getValue().matches("\\d+"))
-                    continue;
-                
-                if(n.getValue().equals("ARRAY"))
+                {
+                    if(Integer.parseInt(n.getValue()) > 5)
+                        jvm.append("\nbipush ");
+                    else
+                        jvm.append("\niconst_");
+                    
+                    jvm.append(n.getValue());
+                }
+                else if(n.getValue().equals("ARRAY"))
                 {
                     jvm.append("\naload_");
                     jvm.append(sp.get(n.getChildAt(0).getValue()));
+                }
+                else if(n.getValue().equals("LDC"))
+                {
+                    jvm.append("\nldc ");
+                    jvm.append(n.getChildAt(0).getValue());
                 }
                 else
                 {
@@ -538,7 +565,7 @@ public class Converter
                 if (n.getValue().equals("ARRAY"))
                 {
                     jvm.append("[I");
-                } else if (n.getValue().equals("STRING"))
+                } else if (n.getValue().equals("LDC"))
                 {
                     jvm.append("Ljava/lang/String;");
                 } else
@@ -566,119 +593,76 @@ public class Converter
         
         return jvm;
     }
- 
-    private StringBuilder RelationalsHandler(String operation, Node<String> oper1, Node<String> oper2, Map<String, Integer> sp){
 
+    private StringBuilder operationsHandler(String operation, Node<String> oper1, Node<String> oper2)
+    {
         StringBuilder jvm = new StringBuilder();
-    
-         if(oper1.getValue().matches("\\d+") && oper2.getValue().matches("\\d+")) //<Number> <operation> <Number>
-        {
-            jvm.append("\niconst_");
-            jvm.append(oper1.getValue());
-            jvm.append("\niconst_");
-            jvm.append(oper2.getValue());
-        }
-        else if(oper1.getValue().equals("ARRAY") && oper2.getValue().matches("\\d+")) //<Array> <operation> <Number>
-        {
-            jvm.append("\naload_");
-            jvm.append(sp.get(oper1.getChildAt(0).getValue()));
-            jvm.append("\nbipush ");
-            jvm.append(oper1.getChildAt(1).getValue());
-            jvm.append("\niconst_");
-            jvm.append(oper2.getValue());
-        }
-        else if(oper1.getValue().equals("ARRAY") && oper2.getValue().equals("ARRAY")) //<Array> <operation> <Array>
-        {
-            jvm.append("\naload_");
-            jvm.append(sp.get(oper1.getChildAt(0).getValue()));
-            jvm.append("\nbipush ");
-            jvm.append(oper1.getChildAt(1).getValue());
-            jvm.append("\naload_");
-            jvm.append(sp.get(oper2.getChildAt(0).getValue()));
-            jvm.append("\nbipush ");
-            jvm.append(oper2.getChildAt(1).getValue());
-        }
-        else if(oper1.getValue().matches("\\d+") && oper2.getValue().equals("ARRAY")) //<Number> <operation> <Array>
-        {
-            jvm.append("\niconst_");
-            jvm.append(oper1.getValue());
-            jvm.append("\naload_");
-            jvm.append(sp.get(oper2.getChildAt(0).getValue()));
-            jvm.append("\nbipush ");
-            jvm.append(oper2.getChildAt(1).getValue());
-        }
-        else if(oper1.getValue().matches("\\d+")) //<Number> <operation> <Parameter>
-        {
-            jvm.append("\niconst_");
-            jvm.append(oper1.getValue());
-            jvm.append("\niload_");
-            jvm.append(sp.get(oper2.getValue()));
-        }
-        else if(oper1.getValue().equals("ARRAY")) //<Array> <operation> <Parameter>
-        {
-            jvm.append("\naload_");
-            jvm.append(sp.get(oper1.getChildAt(0).getValue()));
-            jvm.append("\nbipush ");
-            jvm.append(oper1.getChildAt(1).getValue());
-            jvm.append("\niload_");
-            jvm.append(sp.get(oper2.getValue()));
-        }
-        else if(oper2.getValue().matches("\\d+")) //<Parameter> <operation> <Number>
-        {
-            jvm.append("\niload_");
-            jvm.append(sp.get(oper1.getValue()));
-            jvm.append("\niconst_");
-            jvm.append(oper2.getValue());
-        }
-        else if(oper2.getValue().equals("ARRAY")) //<Parameter> <operation> <Array>
-        {
-            jvm.append("\niload_");
-            jvm.append(sp.get(oper1.getValue()));
-            jvm.append("\naload_");
-            jvm.append(sp.get(oper2.getChildAt(0).getValue()));
-            jvm.append("\nbipush ");
-            jvm.append(oper2.getChildAt(1).getValue());
-        }
-        else //<Parameter> <operation> <Parameter>
-        {
-            jvm.append("\niload_");
-            jvm.append(sp.get(oper1.getValue()));
-            jvm.append("\niload_");
-            jvm.append(sp.get(oper2.getValue()));
-        }
-
+        
+        jvm.append(operandsHandler(oper1, oper2));
+        
         switch(operation)
-            {
-                case "g":
-                    jvm.append("\cmpg");
-                    break;
-                    
-                case "l":
-                    jvm.append("\cmpl");
-                    break;
-                    
-                case "geq":
-                    jvm.append("\cmpgeq");
-                    break;
-                    
-                case "leq":
-                    jvm.append("\cmpleq");
-                    break;
-                case "noteq":
-                    jvm.append("\cmpnoteq");
-                    break;
-                case "eq":
-                    jvm.append("\cmpeq");
-                    break;
-            }
-            
-            return jvm;
-     }
+        {
+            case "ADD":
+                jvm.append("\niadd");
+                break;
+                
+            case "SUB":
+                jvm.append("\nisub");
+                break;
+                
+            case "MUL":
+                jvm.append("\nimul");
+                break;
+                
+            case "DIV":
+                jvm.append("\nidiv");
+                break;
+        }
+        
+        return jvm;
+    }
     
-
-
-
-    private StringBuilder operationsHandler(String operation, Node<String> oper1, Node<String> oper2, Map<String, Integer> sp)
+    private StringBuilder relationalsHandler(Node<String> nd)
+    {
+        StringBuilder jvm = new StringBuilder();
+        
+        String relational = nd.getValue();
+        Node<String> lhs = nd.getChildAt(0);
+        Node<String> rhs = nd.getChildAt(1);
+        
+        jvm.append(operandsHandler(lhs, rhs));
+        
+        switch(relational)
+        {
+            case ">":
+                jvm.append("\nif_icmple");
+                break;
+                
+            case "<":
+                jvm.append("\nif_icmpge");
+                break;
+                
+            case ">=":
+                jvm.append("\nif_icmplt");
+                break;
+                
+            case "<=":
+                jvm.append("\nif_icmpgt");
+                break;
+                
+            case "==":
+                jvm.append("\nif_icmpne");
+                break;
+                
+            case "!=":
+                jvm.append("\nif_icmpeq");
+                break;
+        }
+        
+        return jvm;
+    }
+    
+    private StringBuilder operandsHandler(Node<String> oper1, Node<String> oper2)
     {
         StringBuilder jvm = new StringBuilder();
         
@@ -718,14 +702,54 @@ public class Converter
             jvm.append("\nbipush ");
             jvm.append(oper2.getChildAt(1).getValue());
         }
-        else if(oper1.getValue().matches("\\d+")) //<Number> <operation> <Parameter>
+        else if(oper1.getValue().equals("CALL") && oper2.getValue().matches("\\d+")) //<Call> <Operation> <Number>
+        {
+            jvm.append(callHandler(oper1));
+            jvm.append("\niconst_");
+            jvm.append(oper2.getValue());
+        }
+        else if(oper1.getValue().equals("CALL") && oper2.getValue().equals("ARRAY")) //<Call> <operation> <Array>
+        {
+            jvm.append(callHandler(oper1));
+            jvm.append("\naload_");
+            jvm.append(sp.get(oper2.getChildAt(0).getValue()));
+            jvm.append("\nbipush ");
+            jvm.append(oper2.getChildAt(1).getValue());
+        }
+        else if(oper1.getValue().equals("CALL")) //<Call> <operation> <Integer>
+        {
+            jvm.append(callHandler(oper1));
+            jvm.append("\niload_");
+            jvm.append(sp.get(oper2.getValue()));
+        }
+        else if(oper1.getValue().matches("\\d+") && oper2.getValue().equals("CALL")) //<Number> <operation> <Call>
+        {
+            jvm.append("\niconst_");
+            jvm.append(oper1.getValue());
+            jvm.append(callHandler(oper2));
+        }
+        else if(oper1.getValue().equals("ARRAY") && oper2.getValue().equals("CALL")) //<Array> <operation> <Call>
+        {
+            jvm.append("\naload_");
+            jvm.append(sp.get(oper1.getChildAt(0).getValue()));
+            jvm.append("\nbipush ");
+            jvm.append(oper1.getChildAt(1).getValue());
+            jvm.append(callHandler(oper2));
+        }
+        else if(oper2.getValue().equals("CALL")) //<Integer> <operation> <Call>
+        {
+            jvm.append("\niload_");
+            jvm.append(sp.get(oper1.getValue()));
+            jvm.append(callHandler(oper2));
+        }
+        else if(oper1.getValue().matches("\\d+")) //<Number> <operation> <Integer>
         {
             jvm.append("\niconst_");
             jvm.append(oper1.getValue());
             jvm.append("\niload_");
             jvm.append(sp.get(oper2.getValue()));
         }
-        else if(oper1.getValue().equals("ARRAY")) //<Array> <operation> <Parameter>
+        else if(oper1.getValue().equals("ARRAY")) //<Array> <operation> <Integer>
         {
             jvm.append("\naload_");
             jvm.append(sp.get(oper1.getChildAt(0).getValue()));
@@ -734,14 +758,14 @@ public class Converter
             jvm.append("\niload_");
             jvm.append(sp.get(oper2.getValue()));
         }
-        else if(oper2.getValue().matches("\\d+")) //<Parameter> <operation> <Number>
+        else if(oper2.getValue().matches("\\d+")) //<Integer> <operation> <Number>
         {
             jvm.append("\niload_");
             jvm.append(sp.get(oper1.getValue()));
             jvm.append("\niconst_");
             jvm.append(oper2.getValue());
         }
-        else if(oper2.getValue().equals("ARRAY")) //<Parameter> <operation> <Array>
+        else if(oper2.getValue().equals("ARRAY")) //<Integer> <operation> <Array>
         {
             jvm.append("\niload_");
             jvm.append(sp.get(oper1.getValue()));
@@ -750,7 +774,7 @@ public class Converter
             jvm.append("\nbipush ");
             jvm.append(oper2.getChildAt(1).getValue());
         }
-        else //<Parameter> <operation> <Parameter>
+        else //<Integer> <operation> <Integer>
         {
             jvm.append("\niload_");
             jvm.append(sp.get(oper1.getValue()));
@@ -758,26 +782,51 @@ public class Converter
             jvm.append(sp.get(oper2.getValue()));
         }
         
+        return jvm;
+    }
+    
+    private StringBuilder whileHandler(Node<String> nd)
+    {
+        StringBuilder jvm = new StringBuilder();
         
+        jvm.append("\n\nloop"+loopNo+":");
+        jvm.append(relationalsHandler(nd.getChildAt(0)));
+        jvm.append(" loop"+loopNo+"_end");
+        jvm.append(blockHandler(nd));
+        jvm.append("\ngoto loop"+loopNo);
+        jvm.append("\n\nloop"+(loopNo++)+"_end: ");
         
-        switch(operation)
+        return jvm;
+    }
+    
+    private StringBuilder ifHandler(Node<String> nd)
+    {
+        StringBuilder jvm = new StringBuilder();
+        
+        if(nd.getChildCount() == 2)
         {
-            case "ADD":
-                jvm.append("\niadd");
-                break;
-                
-            case "SUB":
-                jvm.append("\nisub");
-                break;
-                
-            case "MUL":
-                jvm.append("\nimul");
-                break;
-                
-            case "DIV":
-                jvm.append("\nidiv");
-                break;
+            jvm.append(relationalsHandler(nd.getChildAt(0)));
+            jvm.append(" loop"+loopNo+"_end");
+            jvm.append(blockHandler(nd));
+            jvm.append("\n\nloop"+(loopNo++)+"_end: ");
         }
+        else
+        {
+            jvm.append(relationalsHandler(nd.getChildAt(0)));
+            jvm.append(" loop"+loopNo);
+            jvm.append(blockHandler(nd));
+            jvm.append("\ngoto loop"+loopNo+"_end");
+            jvm.append("\n\nloop"+loopNo+": ");
+            jvm.append(blockHandler(nd.getChildAt(2)));
+            jvm.append("\n\nloop"+(loopNo++)+"_end: ");
+        }
+        
+        return jvm;
+    }
+    
+    private StringBuilder forHandler(Node<String> nd)
+    {
+        StringBuilder jvm = new StringBuilder();
         
         return jvm;
     }

@@ -44,6 +44,12 @@ public class Node<T> implements TreeNode
         this.children = children;       
     }
 
+    public void addChild(Node<T> child)
+    {
+        child.setParent(this);
+        this.children.add(child);
+    }
+    
     public T getValue()
     {
         return value;
