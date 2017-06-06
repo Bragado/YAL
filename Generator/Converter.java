@@ -268,22 +268,22 @@ public class Converter
         StringBuilder jvm = new StringBuilder();
         
         switch (lhsV) {
-            case ">":
-                jvm.append(RelationalsHandler(">", lhsN.getChildAt(0), lhsN.getChildAt(1), sp));
+            case "g":
+                jvm.append(RelationalsHandler("g", lhsN.getChildAt(0), lhsN.getChildAt(1), sp));
                 break;
-            case "<":
+            case "l":
                 jvm.append(RelationalsHandler("<", lhsN.getChildAt(0), lhsN.getChildAt(1), sp));
                 break;
-            case ">=":
+            case "geq":
                 jvm.append(RelationalsHandler(">=", lhsN.getChildAt(0), lhsN.getChildAt(1), sp));
                 break;
-            case "<=":
+            case "leq":
                 jvm.append(RelationalsHandler("<=", lhsN.getChildAt(0), lhsN.getChildAt(1), sp));
                 break;
-            case "!=":
+            case "noteq":
                 jvm.append(RelationalsHandler("!=", lhsN.getChildAt(0), lhsN.getChildAt(1), sp));
                 break;
-            case "==":
+            case "eq":
                 jvm.append(RelationalsHandler("==", lhsN.getChildAt(0), lhsN.getChildAt(1), sp));
                 break;
             default:
@@ -571,33 +571,104 @@ public class Converter
 
         StringBuilder jvm = new StringBuilder();
     
-        jvm.append("\niconst_");
-        jvm.append(oper1.getValue());
-        jvm.append("\niconst_");
-        jvm.append(oper2.getValue());
+         if(oper1.getValue().matches("\\d+") && oper2.getValue().matches("\\d+")) //<Number> <operation> <Number>
+        {
+            jvm.append("\niconst_");
+            jvm.append(oper1.getValue());
+            jvm.append("\niconst_");
+            jvm.append(oper2.getValue());
+        }
+        else if(oper1.getValue().equals("ARRAY") && oper2.getValue().matches("\\d+")) //<Array> <operation> <Number>
+        {
+            jvm.append("\naload_");
+            jvm.append(sp.get(oper1.getChildAt(0).getValue()));
+            jvm.append("\nbipush ");
+            jvm.append(oper1.getChildAt(1).getValue());
+            jvm.append("\niconst_");
+            jvm.append(oper2.getValue());
+        }
+        else if(oper1.getValue().equals("ARRAY") && oper2.getValue().equals("ARRAY")) //<Array> <operation> <Array>
+        {
+            jvm.append("\naload_");
+            jvm.append(sp.get(oper1.getChildAt(0).getValue()));
+            jvm.append("\nbipush ");
+            jvm.append(oper1.getChildAt(1).getValue());
+            jvm.append("\naload_");
+            jvm.append(sp.get(oper2.getChildAt(0).getValue()));
+            jvm.append("\nbipush ");
+            jvm.append(oper2.getChildAt(1).getValue());
+        }
+        else if(oper1.getValue().matches("\\d+") && oper2.getValue().equals("ARRAY")) //<Number> <operation> <Array>
+        {
+            jvm.append("\niconst_");
+            jvm.append(oper1.getValue());
+            jvm.append("\naload_");
+            jvm.append(sp.get(oper2.getChildAt(0).getValue()));
+            jvm.append("\nbipush ");
+            jvm.append(oper2.getChildAt(1).getValue());
+        }
+        else if(oper1.getValue().matches("\\d+")) //<Number> <operation> <Parameter>
+        {
+            jvm.append("\niconst_");
+            jvm.append(oper1.getValue());
+            jvm.append("\niload_");
+            jvm.append(sp.get(oper2.getValue()));
+        }
+        else if(oper1.getValue().equals("ARRAY")) //<Array> <operation> <Parameter>
+        {
+            jvm.append("\naload_");
+            jvm.append(sp.get(oper1.getChildAt(0).getValue()));
+            jvm.append("\nbipush ");
+            jvm.append(oper1.getChildAt(1).getValue());
+            jvm.append("\niload_");
+            jvm.append(sp.get(oper2.getValue()));
+        }
+        else if(oper2.getValue().matches("\\d+")) //<Parameter> <operation> <Number>
+        {
+            jvm.append("\niload_");
+            jvm.append(sp.get(oper1.getValue()));
+            jvm.append("\niconst_");
+            jvm.append(oper2.getValue());
+        }
+        else if(oper2.getValue().equals("ARRAY")) //<Parameter> <operation> <Array>
+        {
+            jvm.append("\niload_");
+            jvm.append(sp.get(oper1.getValue()));
+            jvm.append("\naload_");
+            jvm.append(sp.get(oper2.getChildAt(0).getValue()));
+            jvm.append("\nbipush ");
+            jvm.append(oper2.getChildAt(1).getValue());
+        }
+        else //<Parameter> <operation> <Parameter>
+        {
+            jvm.append("\niload_");
+            jvm.append(sp.get(oper1.getValue()));
+            jvm.append("\niload_");
+            jvm.append(sp.get(oper2.getValue()));
+        }
 
         switch(operation)
             {
-                case ">":
-                    jvm.append("\ni>");
+                case "g":
+                    jvm.append("\cmpg");
                     break;
                     
-                case "<":
-                    jvm.append("\ni<");
+                case "l":
+                    jvm.append("\cmpl");
                     break;
                     
-                case ">=":
-                    jvm.append("\ni>=");
+                case "geq":
+                    jvm.append("\cmpgeq");
                     break;
                     
-                case "<=":
-                    jvm.append("\ni<=");
+                case "leq":
+                    jvm.append("\cmpleq");
                     break;
-                case "!=":
-                    jvm.append("\ni!=");
+                case "noteq":
+                    jvm.append("\cmpnoteq");
                     break;
-                case "==":
-                    jvm.append("\ni==");
+                case "eq":
+                    jvm.append("\cmpeq");
                     break;
             }
             
