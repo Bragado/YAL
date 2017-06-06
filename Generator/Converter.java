@@ -8,7 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
 
 public class Converter
@@ -827,6 +826,48 @@ public class Converter
     private StringBuilder forHandler(Node<String> nd)
     {
         StringBuilder jvm = new StringBuilder();
+        
+        jvm.append(assignHandler(nd.getChildAt(0))); //Starting variables
+        jvm.append("\n\nloop"+loopNo+": ");
+        jvm.append(relationalsHandler(nd.getChildAt(1))); //Stop condition
+        jvm.append(" loop"+loopNo+"_end");
+        jvm.append(blockHandler(nd)); //Block
+        jvm.append(forIterationsHandler(nd.getChildAt(2))); //Iteration
+        jvm.append("\ngoto loop"+loopNo);
+        jvm.append("\n\nloop"+(loopNo++)+"_end: ");
+        
+        return jvm;
+    }
+    
+    private StringBuilder forIterationsHandler(Node<String> nd)
+    {
+        StringBuilder jvm = new StringBuilder();
+        
+        switch(nd.getValue())
+        {
+            case "INC":
+                jvm.append("\n\niinc ");
+                jvm.append(sp.get(nd.getChildAt(0).getValue()));
+                jvm.append(" ");
+                jvm.append(nd.getChildAt(1));
+                break;
+                
+            case "DEC":
+                int index = sp.get(nd.getChildAt(0).getValue());
+                String value = nd.getChildAt(1).getValue();
+                
+                jvm.append("\n\niload_");
+                jvm.append(index);
+                if(Integer.parseInt(value) <= 5)
+                    jvm.append("\niconst_");
+                else
+                    jvm.append("\nbipush ");
+                jvm.append(value);
+                jvm.append("\nisub");
+                jvm.append("\nistore_");
+                jvm.append(index);
+                break;
+        }
         
         return jvm;
     }
