@@ -1,6 +1,8 @@
 
 import Estruturas.*;
 import AnalisadorLexical.*;
+import AnalisadorSemantico.SemanticAnalyses;
+import AnalisadorSintático.AST;
 import AnalisadorSintático.Parser;
 
 import java.io.StringReader;
@@ -22,18 +24,23 @@ public class Interface  {
 	try {
 		
 		
-		ArrayList<Token> tokens = iinterface.executar("module program1 { data=[100]; mx; mn; function det(d[]) { i=0; M=d.size-1; while(i<M) { a=d[i]; i=i+1; b=d[i]; mx= library1.max(a,b); mn= library1.min(a,b); } } function main() { det(data); io.println(\"max: \",mx); io.println(\"min: \",mn); }}");
-		iinterface.parse(tokens);
-	
+		ArrayList<Token> tokens = iinterface.executar("module program1 { N; data[] =[N]; mx; mn; function det(d[]) { i=0; M=d.size-1; while(i<M) { a=d[i]; i=i+1; b=d[i]; mx= library1.max(a,b); mn= library1.min(a,b); } } function main() { det(data); io.println(\"max: \",mx); io.println(\"min: \",mn); }}");
+		TreeNode<Symbol> CST = iinterface.parse(tokens);
+		
+		AST abstractSyntaxTree = new AST(CST);
+		TreeNode<Symbol> AST = abstractSyntaxTree.run();
+		
+		SemanticAnalyses sem = new SemanticAnalyses(AST);
+		sem.run();
 		}catch (Exception e) {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
 		}
     }
     
-    public  void parse(ArrayList<Token> tokens) {
+    public TreeNode<Symbol> parse(ArrayList<Token> tokens) {
     	Parser parse = new Parser(tokens);
-    	parse.parse();
+    	return parse.parse();
     }
     
    
@@ -48,8 +55,9 @@ public class Interface  {
        while(true){
            Token token = lexer.yylex();
            if(token == null){
-               
-               System.out.println(resultado);
+        	   tokens.add(new Token(TokenID.END, "", 0, 0));
+                
+        	   System.out.println(resultado);
                 return tokens;
            }
                 
@@ -145,6 +153,8 @@ public class Interface  {
            
            }
        }
+       
+      
 
 
 

@@ -90,7 +90,7 @@ public class ParserTable {
 		// Func(rchaveta) -> EPSILON
 		aux = new ArrayList<SymbolID>();
 		aux.add(new SymbolID(TokenID.EPSILON));
-		table[NonTerminals.get(NonTerminalID.FUNC)][Tokens.get(TokenID.FUNCTION)] = aux;
+		table[NonTerminals.get(NonTerminalID.FUNC)][Tokens.get(TokenID.RCHAVETA)] = aux;
 		
 		
 		// Func(function) -> Function Func
@@ -239,7 +239,7 @@ public class ParserTable {
 		//VarListEND(virg) -> virg ArrayORScalarElement VarListEND
 		aux = new ArrayList<SymbolID>();
 		Collections.addAll(aux, new SymbolID(TokenID.VIRG), new SymbolID(NonTerminalID.ArrayOrScalarElement), new SymbolID(NonTerminalID.VarListEnd));
-		table[NonTerminals.get(NonTerminalID.VarListEnd)][Tokens.get(TokenID.RPAR)] = aux;
+		table[NonTerminals.get(NonTerminalID.VarListEnd)][Tokens.get(TokenID.VIRG)] = aux;
 		
 		//VarListEnd(id) -> ''
 		aux = new ArrayList<SymbolID>();
@@ -249,21 +249,21 @@ public class ParserTable {
 		//Stmtlst(while) -> Stmt Stmtlst
 		aux = new ArrayList<SymbolID>();
 		Collections.addAll(aux, new SymbolID(NonTerminalID.Stmt), new SymbolID(NonTerminalID.Stmtlst));
-		table[NonTerminals.get(NonTerminalID.VarListEnd)][Tokens.get(TokenID.WHILE)] = aux;
+		table[NonTerminals.get(NonTerminalID.Stmtlst)][Tokens.get(TokenID.WHILE)] = aux;
 		
 		//Stmtlst(if) -> Stmt Stmtlst
 		aux = new ArrayList<SymbolID>();
 		Collections.addAll(aux, new SymbolID(NonTerminalID.Stmt), new SymbolID(NonTerminalID.Stmtlst));
-		table[NonTerminals.get(NonTerminalID.VarListEnd)][Tokens.get(TokenID.ID)] = aux;
+		table[NonTerminals.get(NonTerminalID.Stmtlst)][Tokens.get(TokenID.IF)] = aux;
 		//Stmtlst(rchav) -> ''
 		aux = new ArrayList<SymbolID>();
 		Collections.addAll(aux, new SymbolID(TokenID.EPSILON));
-		table[NonTerminals.get(NonTerminalID.VarListEnd)][Tokens.get(TokenID.RCHAVETA)] = aux;
+		table[NonTerminals.get(NonTerminalID.Stmtlst)][Tokens.get(TokenID.RCHAVETA)] = aux;
 		
 		//Stmtlst(id) -> Stmt Stmtlst
 		aux = new ArrayList<SymbolID>();
 		Collections.addAll(aux, new SymbolID(NonTerminalID.Stmt), new SymbolID(NonTerminalID.Stmtlst));
-		table[NonTerminals.get(NonTerminalID.VarListEnd)][Tokens.get(TokenID.ID)] = aux;
+		table[NonTerminals.get(NonTerminalID.Stmtlst)][Tokens.get(TokenID.ID)] = aux;
 		
 		//Stmt(while) -> WHILE
 		aux = new ArrayList<SymbolID>();

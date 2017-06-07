@@ -37,13 +37,11 @@ public class Parser {
 		
 		
 		int pointer = 0;
-		
+		int i = 0;	
 		while(!stack.empty()) {
-			
+			i++;
 			TreeNode treeNode = stack.peek();
 			Symbol symbol = (Symbol) treeNode.data;
-			
-			
 			
 			 
 			
