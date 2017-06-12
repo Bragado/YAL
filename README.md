@@ -7,6 +7,13 @@ Iremos dividir o projeto em quatro fases: Análise Lexil (10%) ; Análise Sintá
 
 ### Luís Coelho
 
+Análise Lexical - 7% - fiz a análise lexical sozinho com uma pequena ajuda do Pedro Gomes
+Análise Sintática - 35% - transformei a linguagem para LL(1) ; calculei o first e follow sets ; implementei o algoritmo preditivo ; criei uma nova liguagem para transformar a CST retornada numa AST
+Análise Semântica - 30 % - tudo o que foi implementado na análise semântica foi feito por mim
+JVM - 0 %
+
+Total de contribuição: 72%
+
 ### Pedro Gomes
 
 ### Arthur Matta
