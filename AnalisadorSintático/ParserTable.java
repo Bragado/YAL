@@ -475,6 +475,10 @@ public class ParserTable {
 		table[NonTerminals.get(NonTerminalID.Term3)][Tokens.get(TokenID.BITWISE_OP)] = aux;
 		
 		//Term3(lpar) -> Call 
+		aux = new ArrayList<SymbolID>();
+		Collections.addAll(aux, new SymbolID(NonTerminalID.Call));
+		table[NonTerminals.get(NonTerminalID.Term3)][Tokens.get(TokenID.LPAR)] = aux;
+		
 		//Term3(rpar) -> '' 
 		aux = new ArrayList<SymbolID>();
 		Collections.addAll(aux, new SymbolID(TokenID.EPSILON));

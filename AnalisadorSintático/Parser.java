@@ -19,7 +19,7 @@ public class Parser {
 		this.InputTokens = tokens;
 		this.table = new ParserTable();
 		System.out.println("starting parser");
-		int i;
+	 
 	}
 	
 	
@@ -52,7 +52,7 @@ public class Parser {
 					this.addSymbolsToStack(table.getSymbols((NonTerminalID)symbol.getID(), InputTokens.get(pointer).getID()), stack, treeNode);
 				
 				}else {
-					error();
+					error(this.InputTokens.get(pointer));
 					return null;
 				}
 			}else if(symbol instanceof Token) {
@@ -66,7 +66,7 @@ public class Parser {
 				}
 				
 				else  {
-					error();
+					error(this.InputTokens.get(pointer));
 					return null;
 				}
 					
@@ -110,9 +110,9 @@ public class Parser {
 	}
 
 
-	private boolean error() {
+	private boolean error(Token err) {
 		// TODO Auto-generated method stub
-		System.out.println("error");
+		System.out.println("Line: " + err.line() + " | Column: " + err.getColumn() + " : Error");
 		return false;
 	}
 	

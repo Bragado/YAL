@@ -5,7 +5,7 @@ public class TSymbol {
 	public Symbol data;
 	
 	public enum TYPE {
-		INT, ARRAY, FunctionName, ModuleName
+		INT, ARRAY, FunctionName, ModuleName, ArraySize
 	}
 	
 	public TYPE type;

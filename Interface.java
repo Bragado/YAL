@@ -5,6 +5,9 @@ import AnalisadorSemantico.SemanticAnalyses;
 import AnalisadorSintático.AST;
 import AnalisadorSintático.Parser;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 
@@ -14,17 +17,20 @@ import javax.swing.JTextField;
 
 public class Interface  {
 
-    /**
+	private static final String FILENAME = "programa1.yal";
+	/**
      * Creates new form Inteface
      */
     public static void main(String[] args){
         
 	Interface iinterface = new Interface();
 	
+	String execute = reader(FILENAME);
+	
 	try {
 		
 		
-		ArrayList<Token> tokens = iinterface.executar("module program1 { N; data[] =[N]; mx; mn; function det(d[]) { i=0; M=d.size-1; while(i<M) { a=d[i]; i=i+1; b=d[i]; mx= library1.max(a,b); mn= library1.min(a,b); } } function main() { det(data); io.println(\"max: \",mx); io.println(\"min: \",mn); }}");
+		ArrayList<Token> tokens = iinterface.executar(execute);
 		TreeNode<Symbol> CST = iinterface.parse(tokens);
 		
 		AST abstractSyntaxTree = new AST(CST);
@@ -37,6 +43,57 @@ public class Interface  {
 			e.printStackTrace();
 		}
     }
+    
+public static String reader(String filename) {
+		
+		BufferedReader br = null;
+		FileReader fr = null;
+		String content = "";
+
+		try {
+
+			fr = new FileReader(filename);
+			br = new BufferedReader(fr);
+
+			String sCurrentLine;
+
+			br = new BufferedReader(new FileReader(filename));
+			
+			while ((sCurrentLine = br.readLine()) != null) {				
+				int position = 0;
+				if (sCurrentLine.contains("//")) {
+					position = sCurrentLine.indexOf("//");
+					content += sCurrentLine.substring(0, position) + '\n';
+				}
+				else 
+					content += sCurrentLine + '\n';
+			}
+
+		} catch (IOException e) {
+
+			e.printStackTrace();
+
+		} finally {
+
+			try {
+
+				if (br != null)
+					br.close();
+
+				if (fr != null)
+					fr.close();
+
+			} catch (IOException ex) {
+
+				ex.printStackTrace();
+
+			}
+
+		}
+		System.out.println(content.toLowerCase());
+		return content.toLowerCase();
+
+	}
     
     public TreeNode<Symbol> parse(ArrayList<Token> tokens) {
     	Parser parse = new Parser(tokens);
