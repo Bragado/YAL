@@ -31,3 +31,5 @@ Contribuição total: 20,25%
 
 
 ### André Maia
+
+A minha contribuição após grande dificuldade de perceber e entender o que era pedido e com ajuda dos meus colegas de grupo é de 15%
